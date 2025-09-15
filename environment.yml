@@ -8,4 +8,6 @@ dependencies:
   - conda-forge::pydantic
   - conda-forge::langchain
   - anaconda::redis
+  - conda-forge::sqlmodel
+
 prefix: /home/sazz/miniconda3/envs/palm_mind
