@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.schemas import ChatQuery, ChatAnswer
 from app.models.db_models import ChatSession as ChatSessionDB, ChatMessage as ChatMessageDB
-from app.services.redis_memory import add_message, get_messages
+from app.services.redis_memory import *
 from app.services.retriever import retrieve
 from app.services.groq_llm import chat_completion
 from app.services.booking_llm import extract_booking_info
@@ -23,21 +23,32 @@ SYSTEM_PROMPT = (
     "If the answer is not in the context, say you are not sure."
 )
 
-def build_prompt(history: List[Dict[str, str]], context_docs: List[Dict]) -> List[Dict[str, str]]:
+def build_prompt(history: List[Dict[str, str]], context_docs: List[Dict], last_booking: Dict | None = None) -> List[Dict[str, str]]:
     context_strs = []
+    if last_booking:
+        context_strs.append(
+            "SessionInfo: last_booking="
+            f"{last_booking.get('name')} {last_booking.get('email')} "
+            f"on {last_booking.get('date')} at {last_booking.get('time')}"
+        )
     for i, d in enumerate(context_docs):
         meta = d.get("metadata", {})
         chunk_index = meta.get("chunk_index")
         filename = meta.get("filename")
         text = meta.get("text") or ""
         context_strs.append(f"[{i}] file={filename} chunk={chunk_index}\n{text}".strip())
-    context_block = "\n\n".join(context_strs).strip()
+    context_block = "\n\n".join([c for c in context_strs if c]).strip()
 
     messages: List[Dict[str, str]] = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(history)
     if context_block:
         messages.append({"role": "system", "content": f"Context:\n{context_block}"})
     return messages
+
+def _is_booking_status_question(q: str) -> bool:
+    ql = (q or "").lower()
+    return any(k in ql for k in ["booked", "booking status", "confirm my booking", "was it booked", "did my interview"])
+
 
 def _normalize_hms_if_needed(t: str) -> str:
     t = (t or "").strip()
@@ -68,6 +79,24 @@ def chat_query(payload: ChatQuery, session: Session = Depends(get_session)) -> C
 
     # Get history from Redis
     history = get_messages(payload.session_id, limit=20)
+    last_booking = get_last_booking(payload.session_id)
+
+    if _is_booking_status_question(payload.question):
+        if last_booking:
+            answer = (
+                f"Yes, your interview is booked for {last_booking.get('name')} "
+                f"on {last_booking.get('date')} at {last_booking.get('time')} "
+                f"({last_booking.get('email')})."
+            )
+        else:
+            answer = "I don't see a booking in this session. If you booked earlier, please share the email or re-confirm the details."
+        user_msg = ChatMessageDB(session_id=cs.id, sender="user", message=payload.question)
+        asst_msg = ChatMessageDB(session_id=cs.id, sender="assistant", message=answer)
+        session.add_all([user_msg, asst_msg]); session.commit()
+        add_message(payload.session_id, "user", payload.question)
+        add_message(payload.session_id, "assistant", answer)
+        return ChatAnswer(session_id=payload.session_id, answer=answer, sources=[])
+
     booking_result = extract_booking_info(payload.question)
     print("Booking extraction result:", booking_result)
     if "BOOKING_READY" in booking_result:
@@ -120,6 +149,14 @@ def chat_query(payload: ChatQuery, session: Session = Depends(get_session)) -> C
 
         # 3) Create booking BEFORE responding
         booking_resp = create_booking(payload=booking_payload, session=session)
+
+        set_last_booking(payload.session_id, {
+            "name": booking_resp.name,
+            "email": booking_resp.email,
+            "date": str(booking_resp.date),
+            "time": str(booking_resp.time),
+        })
+
 
         answer = f"Booking confirmed for {booking_resp.name} on {booking_resp.date} at {booking_resp.time}."
         user_msg = ChatMessageDB(session_id=cs.id, sender="user", message=payload.question)
