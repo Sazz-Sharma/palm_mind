@@ -1,0 +1,19 @@
+name: palm_mind
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - fastapi
+  - uvicorn
+  - pip
+  - conda-forge::pydantic
+  - conda-forge::langchain
+  - anaconda::redis
+  - conda-forge::pydantic-settings
+  - conda-forge::loguru
+  - conda-forge::psycopg2-binary
+  - conda-forge::sqlmodel
+  - conda-forge::pypdf
+  - conda-forge::langchain-text-splitters
+  - conda-forge::pinecone
+prefix: /home/sazz/miniconda3/envs/palm_mind
