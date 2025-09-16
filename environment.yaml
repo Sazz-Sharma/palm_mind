@@ -1,19 +1,23 @@
-name: palm_mind
+name: palm_mind_py311
 channels:
   - defaults
 dependencies:
   - python=3.11
   - fastapi
-  - uvicorn
-  - pip
+  - conda-forge::loguru
+  - conda-forge::pinecone
   - conda-forge::pydantic
   - conda-forge::langchain
-  - anaconda::redis
-  - conda-forge::pydantic-settings
-  - conda-forge::loguru
+  - conda-forge::pypdf
+  - uvicorn
+  - pip
   - conda-forge::psycopg2-binary
   - conda-forge::sqlmodel
-  - conda-forge::pypdf
+  - anaconda::redis
+  - conda-forge::pydantic-settings
   - conda-forge::langchain-text-splitters
-  - conda-forge::pinecone
-prefix: /home/sazz/miniconda3/envs/palm_mind
+  - conda-forge::python-multipart
+  - conda-forge::email_validator
+  - conda-forge::redis-py
+  - conda-forge::groq
+prefix: /home/sazz/miniconda3/envs/palm_mind_py311
