@@ -38,17 +38,28 @@ REDIS_URL=redis://localhost:6379/0
 DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/palm_mind
 ```
 
-### 3. Initialize Database
+### 4. Run the Redis Server
+
+```bash
+redis-server
+```
+To confirm you can check with: 
+
+```bash
+redis-cli ping
+```
+
+### 5. Initialize Database
 ```bash
 python -m app.db.init_db
 ```
 
-### 4. Run the API
+### 6. Run the API
 ```bash
 uvicorn app.main:app --reload
 ```
 
-### 5. Explore Endpoints
+### 7. Explore Endpoints
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Health: `/api/v1/health`
 - Ingest: `/api/v1/ingest/upload` (upload .pdf/.txt)
