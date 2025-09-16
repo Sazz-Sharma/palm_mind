@@ -22,7 +22,6 @@ def build_prompt(history: List[Dict[str, str]], context_docs: List[Dict]) -> Lis
         meta = d.get("metadata", {})
         chunk_index = meta.get("chunk_index")
         filename = meta.get("filename")
-        # if you stored text in metadata, include it; otherwise Pinecone doesn't store text, only metadata
         text = meta.get("text") or ""
         context_strs.append(f"[{i}] file={filename} chunk={chunk_index}\n{text}".strip())
     context_block = "\n\n".join(context_strs).strip()
@@ -49,6 +48,7 @@ def chat_query(payload: ChatQuery, session: Session = Depends(get_session)) -> C
     history = get_messages(payload.session_id, limit=20)
 
     # Retrieve docs
+    ns = payload.namespace or "__default__"
     docs = retrieve(payload.question, top_k=payload.top_k, namespace=payload.namespace)
 
     # Build and call LLM

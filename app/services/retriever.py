@@ -5,7 +5,7 @@ from app.services.pinecone_service import PineconeService
 pc = PineconeService()
 
 def retrieve(query: str, top_k: int = 5, namespace: str | None = None) -> List[Dict[str, Any]]:
-    emb = pc.embed_texts([query])[0]
+    emb = pc.embed_texts([query], input_type="query")[0]
     res = pc.index.query(
         vector=emb,
         top_k=top_k,

@@ -78,6 +78,7 @@ def upload_document(
                 "document_id": doc.id,
                 "filename": filename,
                 "chunk_index": idx,
+                "text": ch_text,
             },
         })
         chunk_rows.append(Chunk(

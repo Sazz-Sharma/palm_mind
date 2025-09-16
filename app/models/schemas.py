@@ -7,7 +7,7 @@ class ChatQuery(BaseModel):
     session_id: str = Field(..., min_length=3)
     question: str = Field(..., min_length=1)
     top_k: int = Field(5, ge=1, le=20)
-    namespace: Optional[str] = None
+    namespace: str = Field("__default__")
 
 class ChatAnswer(BaseModel):
     session_id: str
